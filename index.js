@@ -86,12 +86,12 @@ const headers = {
 		return data.id;
 	},
 	getChangedFiles = async targetBranch => {
-		const util = require("util");
-		const exec = util.promisify(require("child_process").exec);
+		const util = require('util');
+		const exec = util.promisify(require('child_process').exec);
 		const { stdout, stderr } = await exec(
 		  `git diff origin/${targetBranch}... --name-only --diff-filter=d`
 		);
-		return stdout.trim().split("\n");
+		return stdout.trim().split('\n');
 	  },
 	  eslint = async () => {
 		const partialLinting = process.env.PARTIAL_LINTING; //false
@@ -99,7 +99,7 @@ const headers = {
 		if (partialLinting && event.pull_request) {
 			const branch = event.pull_request.base.ref;
 			files = await getChangedFiles(branch);
-		};
+		}
 		const eslint = require('eslint'),
 			cli = new eslint.CLIEngine(),
 			report = cli.executeOnFiles(files),
@@ -110,10 +110,15 @@ const headers = {
 			const path = result.filePath.substring(GITHUB_WORKSPACE.length + 1);
 			return annoList.concat(result.messages.map(m => {
 				const singleLine = m.line === m.endLine;
+				const columns = singleLine
+					? {
+						start_column: m.column,
+						end_column: m.endColumn
+					}
+					: {};
 				return {
+					...columns,
 					path,
-					start_column: singleLine && m.column,
-					end_column: singleLine && m.endColumn,
 					start_line: m.line,
 					end_line: m.endLine,
 					annotation_level: levels[m.severity],
